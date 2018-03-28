@@ -10,23 +10,38 @@ import * as I from './interfaces';
 // Animations
 import * as A from './animations';
 
+// Utils
+import { getData } from './data';
+
 const Application = PIXI.Application;
 const Graphics = PIXI.Graphics;
 
 class ElasticSwitch extends React.Component<I.Props> {
   app: PIXI.Application;
-  circleOne: I.CircleGraphics;
-  circleTwo: I.CircleGraphics;
-  line: I.LineGraphics;
+  circleOne: {
+    graphics: PIXI.Graphics,
+    data: I.CircleData,
+  };
+  circleTwo: {
+    graphics: PIXI.Graphics,
+    data: I.CircleData,
+  };
+  line: {
+    graphics: PIXI.Graphics,
+    data: I.LineData,
+  };
   wrapper: HTMLDivElement | null;
   reference: number;
   pointerState: 'in' | 'out';
+  debugLC1: PIXI.Graphics;
+  debugLC2: PIXI.Graphics;
+  debugLC3: PIXI.Graphics;
 
-  vars = {
-    size: 100,
-    padding: 10,
+  vars: I.Vars = {
+    size: 120,
+    padding: 20,
     circle: {
-      radius: 5,
+      radius: 3,
       radiusHover: 15,
       fill: 0xFFFFFF,
     },
@@ -35,10 +50,21 @@ class ElasticSwitch extends React.Component<I.Props> {
     },
   };
 
+  debug: boolean = false;
+
   componentDidMount() {
     this.app = new Application(this.vars.size, this.vars.size, {
       transparent: true,
     });
+    let circleOneType = 'verticalCircleOne';
+    let circleTwoType = 'verticalCircleTwo';
+    let lineType = 'verticalLine';
+
+    if (this.props.horizontal) {
+      circleOneType = 'horizontalCircleOne';
+      circleTwoType = 'horizontalCircleTwo';
+      lineType = 'horizontalLine';
+    }
 
     if (this.wrapper) {
       this.wrapper.appendChild(this.app.view);
@@ -50,33 +76,15 @@ class ElasticSwitch extends React.Component<I.Props> {
     // Setup shapes
     this.circleOne = {
       graphics: new Graphics(),
-      data: {
-        alpha: 0,
-        fill: this.vars.circle.fill,
-        radius: this.vars.circle.radius,
-        x: this.vars.size / 2,
-        y: this.vars.padding,
-      },
+      data: getData(circleOneType, this.vars),
     };
     this.circleTwo = {
       graphics: new Graphics(),
-      data: {
-        alpha: 0,
-        fill: this.vars.circle.fill,
-        radius: this.vars.circle.radius,
-        x: this.vars.size / 2,
-        y: this.vars.size - this.vars.padding,
-      },
+      data: getData(circleTwoType, this.vars),
     };
     this.line = {
       graphics: new Graphics(),
-      data: {
-        xStart: this.vars.size / 2,
-        yStart: this.vars.padding + (this.vars.circle.radius / 2),
-        xEnd: this.vars.size / 2,
-        yEnd: this.vars.size - (this.vars.padding + (this.vars.circle.radius / 2)),
-        fill: this.vars.line.fill,
-      }
+      data: getData(lineType, this.vars),
     };
     this.line.graphics.interactive = true;
 
@@ -85,6 +93,13 @@ class ElasticSwitch extends React.Component<I.Props> {
       this.circleOne.graphics,
       this.circleTwo.graphics,
     );
+
+    if (this.debug) {
+      this.debugLC1 = new Graphics();
+      this.debugLC2 = new Graphics();
+      this.debugLC3 = new Graphics();
+      this.app.stage.addChild(this.debugLC1, this.debugLC2, this.debugLC3);
+    }
 
     this.reference = this.vars.size / 2;
     this.setEvents();
@@ -107,12 +122,34 @@ class ElasticSwitch extends React.Component<I.Props> {
     const l = this.line;
     const lD = l.data;
 
+    if (this.debug) {
+      this.debugLC1
+        .clear()
+        .beginFill(0xCC0000, 1)
+        .drawRect(lD.xStart - 2, lD.yStart - 2, 4, 4)
+        .endFill();
+      this.debugLC2
+        .clear()
+        .beginFill(0x00CC00, 1)
+        .drawRect(lD.xControl - 2, lD.yControl - 2, 4, 4)
+        .endFill();
+      this.debugLC3
+        .clear()
+        .beginFill(0x0000CC, 1)
+        .drawRect(lD.xEnd - 2, lD.yEnd - 2, 4, 4)
+        .endFill();
+    }
+
     l.graphics
       .clear()
-      .beginFill(lD.fill, 1)
+      .beginFill(lD.fill, 0)
       .lineStyle(2, lD.fill, 1)
       .moveTo(lD.xStart, lD.yStart)
-      .lineTo(lD.xEnd, lD.yEnd)
+      .bezierCurveTo(
+        lD.xStart, lD.yStart,
+        lD.xControl, lD.yControl,
+        lD.xEnd, lD.yEnd
+      )
       .endFill();
 
     c1.graphics
@@ -139,7 +176,8 @@ class ElasticSwitch extends React.Component<I.Props> {
   }
 
   mouseMoveHandler = (e: MouseEvent): void => {
-    const pos = e.offsetX;
+    const { horizontal } = this.props;
+    const pos = horizontal ? e.offsetY : e.offsetX;
     const halfSize = this.vars.size / 2;
 
     if (this.pointerState === 'out') {
@@ -150,38 +188,58 @@ class ElasticSwitch extends React.Component<I.Props> {
       this.reference < halfSize
       && pos > halfSize
     ) {
-      console.log('animate to right!');
+      const move = horizontal ? 'horizontalMove' : 'verticalMove';
+      A[move]({
+        line: this.line,
+        direction: 'right',
+      });
     }
 
     if (
       this.reference > halfSize
       && pos < halfSize
     ) {
-      console.log('animate to left!');
+      const move = horizontal ? 'horizontalMove' : 'verticalMove';
+      A[move]({
+        line: this.line,
+        direction: 'left',
+      });
     }
 
     this.reference = pos;
   }
 
   mouseEnterHandler = (e: MouseEvent): void => {
+    const { horizontal } = this.props;
     this.pointerState = 'in';
-    A.hover({
+    const hover = horizontal ? 'horizontalHover' : 'verticalHover';
+    // const yOne = horizontal ?
+    A[hover]({
       circleOne: this.circleOne,
       circleTwo: this.circleTwo,
-      yOne: this.vars.padding - 5,
-      yTwo: this.vars.size - 5,
+      line: this.line,
+      yOne: this.vars.circle.radius + 2,
+      yTwo: this.vars.size - (this.vars.circle.radius + 2),
+      radius: this.vars.circle.radius * 1.5,
     });
   }
 
   mouseOutHandler = (e: MouseEvent): void => {
+    const { horizontal } = this.props;
     this.pointerState = 'out';
-    A.unHover({
+    const unhover = horizontal ? 'horizontalUnhover' : 'verticalUnhover';
+    A[unhover]({
       circleOne: this.circleOne,
       circleTwo: this.circleTwo,
-      yOne: this.vars.padding,
-      yTwo: this.vars.size - this.vars.padding,
+      line: this.line,
+      yOne: this.vars.padding * 1.5,
+      yTwo: this.vars.size - (this.vars.padding * 1.5),
+      lineStart: this.vars.padding + (this.vars.circle.radius / 2),
+      lineEnd: this.vars.size - (this.vars.padding + (this.vars.circle.radius / 2)),
+      radius: this.vars.circle.radius,
     });
   }
+
 }
 
 export default ElasticSwitch;
