@@ -12,6 +12,7 @@ import * as A from './animations';
 
 // Utils
 import { getData } from './data';
+import { getX, getY } from './utils';
 
 const Application = PIXI.Application;
 const Graphics = PIXI.Graphics;
@@ -171,14 +172,20 @@ class ElasticSwitch extends React.Component<I.Props> {
   setEvents() {
     if (this.wrapper) {
       this.wrapper.addEventListener('mousemove', this.mouseMoveHandler, false);
+      this.wrapper.addEventListener('touchmove', this.mouseMoveHandler, false);
+      this.wrapper.addEventListener('touchend', this.touchUpHandler, false);
       this.wrapper.addEventListener('mouseenter', this.mouseEnterHandler, false);
       this.wrapper.addEventListener('mouseout', this.mouseOutHandler, false);
     }
   }
 
+  touchUpHandler = (e: MouseEvent): void => {
+    this.reference = this.vars.size / 2;
+  }
+
   mouseMoveHandler = (e: MouseEvent): void => {
     const { horizontal } = this.props;
-    const pos = horizontal ? e.offsetY : e.offsetX;
+    const pos = horizontal ? getY(e) : getX(e);
     const halfSize = this.vars.size / 2;
 
     if (
