@@ -14,6 +14,7 @@ export const verticalHover = ({circleOne, circleTwo, line, yOne, yTwo, radius}: 
         onComplete: resolve,
     });
     TweenMax.to(line.data, 0.3, {
+        alpha: 1,
         yStart: yOne,
         yEnd: yTwo,
     });
@@ -32,6 +33,7 @@ export const horizontalHover = ({circleOne, circleTwo, line, yOne, yTwo, radius}
         onComplete: resolve,
     });
     TweenMax.to(line.data, 0.3, {
+        alpha: 1,
         xStart: yOne,
         xEnd: yTwo,
     });
@@ -50,6 +52,7 @@ export const verticalUnhover = ({circleOne, circleTwo, line, yOne, yTwo, lineSta
         onComplete: resolve,
     });
     TweenMax.to(line.data, 0.3, {
+        alpha: 0.5,
         yStart: lineStart,
         yEnd: lineEnd,
     });
@@ -68,13 +71,16 @@ export const horizontalUnhover = ({circleOne, circleTwo, line, yOne, yTwo, lineS
         onComplete: resolve,
     });
     TweenMax.to(line.data, 0.3, {
+        alpha: 0.5,
         xStart: lineStart,
         xEnd: lineEnd,
     });
 });
 
 export const verticalMove = ({line, direction}): Promise<any> => new Promise(resolve => {
-    const tl = new TimelineMax({onComplete: resolve});
+    const tl = new TimelineMax({
+        onComplete: resolve,
+    });
     const xControl = line.data.xControl;
     const strength = direction === 'right' ? 30 : -30;
 
@@ -82,14 +88,16 @@ export const verticalMove = ({line, direction}): Promise<any> => new Promise(res
         .to(line.data, 0.3, {
             xControl: xControl + strength
         })
-        .to(line.data, 0.9, {
+        .to(line.data, 0.6, {
             xControl: xControl,
             ease: Elastic.easeOut.config(2.5, 0.1)
         })
 });
 
 export const horizontalMove = ({line, direction}): Promise<any> => new Promise(resolve => {
-    const tl = new TimelineMax({onComplete: resolve});
+    const tl = new TimelineMax({
+        onComplete: resolve,
+    });
     const yControl = line.data.yControl;
     const strength = direction === 'right' ? 30 : -30;
 
@@ -97,7 +105,7 @@ export const horizontalMove = ({line, direction}): Promise<any> => new Promise(r
         .to(line.data, 0.3, {
             yControl: yControl + strength
         })
-        .to(line.data, 0.9, {
+        .to(line.data, 0.6, {
             yControl: yControl,
             ease: Elastic.easeOut.config(2.5, 0.1)
         })

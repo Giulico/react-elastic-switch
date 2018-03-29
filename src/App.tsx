@@ -8,13 +8,21 @@ class App extends React.Component {
     return (
       <div className="App">
         <div className="u-container">
-          <ElasticSwitch />
+          <ElasticSwitch
+            onSwitch={this.onSwitchHandler}
+          />
         </div>
         <div className="u-container">
-          <ElasticSwitch horizontal={true} />
+          <ElasticSwitch
+            horizontal={true}
+          />
         </div>
       </div>
     );
+  }
+
+  onSwitchHandler = (e: Object) => {
+    console.log('Switch!', e);
   }
 }
 

@@ -18,6 +18,7 @@ export const getData = (type: string, vars: I.Vars) => {
         y: vars.size - (vars.padding * 1.5),
       },
       verticalLine: {
+        alpha: 0.5,
         xStart: vars.size / 2,
         yStart: vars.padding + (vars.circle.radius / 2),
         xControl: vars.size / 2,
@@ -41,6 +42,7 @@ export const getData = (type: string, vars: I.Vars) => {
         y: vars.size / 2,
       },
       horizontalLine: {
+        alpha: 0.5,
         xStart: vars.padding + (vars.circle.radius / 2),
         yStart: vars.size / 2,
         xControl: vars.size / 2,

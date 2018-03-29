@@ -7,6 +7,7 @@ export interface CircleData {
 }
 
 export interface LineData {
+  alpha: number,
   xStart: number,
   xControl: number,
   xEnd: number,
@@ -18,6 +19,7 @@ export interface LineData {
 
 export interface Props {
   horizontal?: boolean;
+  onSwitch?: Function;
 }
 
 export interface Vars {

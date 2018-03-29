@@ -33,6 +33,7 @@ class ElasticSwitch extends React.Component<I.Props> {
   wrapper: HTMLDivElement | null;
   reference: number;
   pointerState: 'in' | 'out';
+  isMoving: boolean = false;
   debugLC1: PIXI.Graphics;
   debugLC2: PIXI.Graphics;
   debugLC3: PIXI.Graphics;
@@ -143,7 +144,7 @@ class ElasticSwitch extends React.Component<I.Props> {
     l.graphics
       .clear()
       .beginFill(lD.fill, 0)
-      .lineStyle(2, lD.fill, 1)
+      .lineStyle(2, lD.fill, lD.alpha)
       .moveTo(lD.xStart, lD.yStart)
       .bezierCurveTo(
         lD.xStart, lD.yStart,
@@ -180,30 +181,50 @@ class ElasticSwitch extends React.Component<I.Props> {
     const pos = horizontal ? e.offsetY : e.offsetX;
     const halfSize = this.vars.size / 2;
 
-    if (this.pointerState === 'out') {
-      return;
-    }
-
     if (
       this.reference < halfSize
       && pos > halfSize
+      && !this.isMoving
     ) {
       const move = horizontal ? 'horizontalMove' : 'verticalMove';
+      const direction = 'right';
+      this.isMoving = true;
       A[move]({
         line: this.line,
-        direction: 'right',
+        direction,
+      })
+      .then(() => {
+        this.isMoving = false;
       });
+
+      if (typeof this.props.onSwitch === 'function') {
+        this.props.onSwitch({
+          direction
+        });
+      }
     }
 
     if (
       this.reference > halfSize
       && pos < halfSize
+      && !this.isMoving
     ) {
       const move = horizontal ? 'horizontalMove' : 'verticalMove';
+      const direction = 'left';
+      this.isMoving = true;
       A[move]({
         line: this.line,
-        direction: 'left',
+        direction,
+      })
+      .then(() => {
+        this.isMoving = false;
       });
+
+      if (typeof this.props.onSwitch === 'function') {
+        this.props.onSwitch({
+          direction
+        });
+      }
     }
 
     this.reference = pos;
@@ -218,13 +239,17 @@ class ElasticSwitch extends React.Component<I.Props> {
       circleOne: this.circleOne,
       circleTwo: this.circleTwo,
       line: this.line,
-      yOne: this.vars.circle.radius + 2,
-      yTwo: this.vars.size - (this.vars.circle.radius + 2),
+      yOne: this.vars.padding,
+      yTwo: this.vars.size - this.vars.padding,
       radius: this.vars.circle.radius * 1.5,
     });
   }
 
-  mouseOutHandler = (e: MouseEvent): void => {
+  mouseOutHandler = (): void => {
+    if (this.isMoving) {
+      requestAnimationFrame(this.mouseOutHandler);
+      return;
+    }
     const { horizontal } = this.props;
     this.pointerState = 'out';
     const unhover = horizontal ? 'horizontalUnhover' : 'verticalUnhover';
