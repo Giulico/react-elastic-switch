@@ -33,8 +33,8 @@ class ElasticSwitch extends React.Component<I.Props> {
   };
   wrapper: HTMLDivElement | null;
   reference: number;
-  pointerState: 'in' | 'out';
   isMoving: boolean = false;
+  isPointerDown: boolean = true;
   debugLC1: PIXI.Graphics;
   debugLC2: PIXI.Graphics;
   debugLC3: PIXI.Graphics;
@@ -171,27 +171,62 @@ class ElasticSwitch extends React.Component<I.Props> {
 
   setEvents() {
     if (this.wrapper) {
+      this.wrapper.addEventListener('mousedown', this.mouseDownHandler, false);
+      document.addEventListener('mouseup', this.mouseUpHandler, false);
       this.wrapper.addEventListener('mousemove', this.mouseMoveHandler, false);
       this.wrapper.addEventListener('touchmove', this.mouseMoveHandler, false);
       this.wrapper.addEventListener('touchend', this.touchUpHandler, false);
-      this.wrapper.addEventListener('mouseenter', this.mouseEnterHandler, false);
-      this.wrapper.addEventListener('mouseout', this.mouseOutHandler, false);
     }
   }
 
-  touchUpHandler = (e: MouseEvent): void => {
+  touchUpHandler = (): void => {
     this.reference = this.vars.size / 2;
+  }
+
+  mouseDownHandler = (): void => {
+    const { horizontal } = this.props;
+    this.isPointerDown = true;
+    const hover = horizontal ? 'horizontalHover' : 'verticalHover';
+    A[hover]({
+      circleOne: this.circleOne,
+      circleTwo: this.circleTwo,
+      line: this.line,
+      yOne: this.vars.padding,
+      yTwo: this.vars.size - this.vars.padding,
+      radius: this.vars.circle.radius * 1.5,
+    });
+  }
+
+  mouseUpHandler = (): void => {
+    if (this.isMoving) {
+      requestAnimationFrame(this.mouseUpHandler);
+      return;
+    }
+    const { horizontal } = this.props;
+    this.isPointerDown = false;
+    const unhover = horizontal ? 'horizontalUnhover' : 'verticalUnhover';
+    A[unhover]({
+      circleOne: this.circleOne,
+      circleTwo: this.circleTwo,
+      line: this.line,
+      yOne: this.vars.padding * 1.5,
+      yTwo: this.vars.size - (this.vars.padding * 1.5),
+      lineStart: this.vars.padding + (this.vars.circle.radius / 2),
+      lineEnd: this.vars.size - (this.vars.padding + (this.vars.circle.radius / 2)),
+      radius: this.vars.circle.radius,
+    });
   }
 
   mouseMoveHandler = (e: MouseEvent): void => {
     const { horizontal } = this.props;
-    const pos = horizontal ? getY(e) : getX(e);
+    const pos = horizontal ? getY(e, this.app) : getX(e, this.app);
     const halfSize = this.vars.size / 2;
 
     if (
       this.reference < halfSize
       && pos > halfSize
       && !this.isMoving
+      && this.isPointerDown
     ) {
       const move = horizontal ? 'horizontalMove' : 'verticalMove';
       const direction = 'right';
@@ -215,6 +250,7 @@ class ElasticSwitch extends React.Component<I.Props> {
       this.reference > halfSize
       && pos < halfSize
       && !this.isMoving
+      && this.isPointerDown
     ) {
       const move = horizontal ? 'horizontalMove' : 'verticalMove';
       const direction = 'left';
@@ -235,41 +271,6 @@ class ElasticSwitch extends React.Component<I.Props> {
     }
 
     this.reference = pos;
-  }
-
-  mouseEnterHandler = (e: MouseEvent): void => {
-    const { horizontal } = this.props;
-    this.pointerState = 'in';
-    const hover = horizontal ? 'horizontalHover' : 'verticalHover';
-    // const yOne = horizontal ?
-    A[hover]({
-      circleOne: this.circleOne,
-      circleTwo: this.circleTwo,
-      line: this.line,
-      yOne: this.vars.padding,
-      yTwo: this.vars.size - this.vars.padding,
-      radius: this.vars.circle.radius * 1.5,
-    });
-  }
-
-  mouseOutHandler = (): void => {
-    if (this.isMoving) {
-      requestAnimationFrame(this.mouseOutHandler);
-      return;
-    }
-    const { horizontal } = this.props;
-    this.pointerState = 'out';
-    const unhover = horizontal ? 'horizontalUnhover' : 'verticalUnhover';
-    A[unhover]({
-      circleOne: this.circleOne,
-      circleTwo: this.circleTwo,
-      line: this.line,
-      yOne: this.vars.padding * 1.5,
-      yTwo: this.vars.size - (this.vars.padding * 1.5),
-      lineStart: this.vars.padding + (this.vars.circle.radius / 2),
-      lineEnd: this.vars.size - (this.vars.padding + (this.vars.circle.radius / 2)),
-      radius: this.vars.circle.radius,
-    });
   }
 
 }
